@@ -196,7 +196,7 @@ function mirror() {
     if ! git clone -b "${INPUT_PUSH_BRANCH_NAME}" --single-branch --bare "${source_addr}" "${INPUT_SOURCE_REPO_NAME}"; then
       notify "Failed to clone repo: ${source_addr}"
       if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
-        continue
+        return 1
       fi
       return 1
     fi
@@ -204,7 +204,7 @@ function mirror() {
     if ! git clone --bare "${source_addr}" "${INPUT_SOURCE_REPO_NAME}"; then
       notify "Failed to clone repo: ${source_addr}"
       if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
-        continue
+        return 1
       fi
       return 1
     fi
@@ -215,7 +215,7 @@ function mirror() {
     if ! create_repo; then
       notify "Failed to create repo: ${INPUT_DEST_REPO_NAME}"
       if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
-        continue
+        return 1
       fi
       return 1
     fi
@@ -231,7 +231,7 @@ function mirror() {
   if ! git push --all -f "${dest_addr}"; then
     notify "Failed to push branches: ${dest_addr}"
     if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
-      continue
+      return 1
     fi
     return 1
   fi
@@ -241,7 +241,7 @@ function mirror() {
     if ! git push --tags -f "${dest_addr}"; then
       notify "Failed to push tags: ${dest_addr}"
       if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
-        continue
+        return 1
       fi
       return 1
     fi
