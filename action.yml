@@ -101,4 +101,5 @@ inputs:
     default: "false"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/CynicalSloths/mirror-git:0.1.0"
+  image: 'Dockerfile'
+  #image: "docker://github.com/CynicalSloths/action-mirror-git@main"

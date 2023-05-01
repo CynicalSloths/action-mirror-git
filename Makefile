@@ -8,7 +8,7 @@ cr_token =
 cr_image = $(cr_user)/$(image)
 
 ghcr = ghcr.io
-ghcr_user = k8scat
+ghcr_user = cynicalsloths
 ghcr_token =
 ghcr_image = $(ghcr)/$(ghcr_user)/$(image)
 
