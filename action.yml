@@ -31,6 +31,9 @@ inputs:
   source_token_username:
     description: "Username who owned the token"
     required: false
+  source_repo_name:
+    description: "Repo to mirror from"
+    required: true
   dest_protocol:
     description: "https or ssh"
     require: true
@@ -57,8 +60,8 @@ inputs:
   dest_create_repo_script:
     description: "Script used to create repo on dest git server"
     required: false
-  mirror_repos:
-    description: "Repos to mirror, separated by comma"
+  dest_repo_name:
+    description: "Repo to mirror towards"
     required: true
   push_tags:
     description: "Push tags, true or false"

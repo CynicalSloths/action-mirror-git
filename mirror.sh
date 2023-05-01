@@ -143,7 +143,7 @@ function init_ssh() {
 
 function gen_source_addr() {
   if [[ "${INPUT_SOURCE_PROTOCOL}" = "${PROTOCOL_SSH}" ]]; then
-    source_addr="git@${INPUT_SOURCE_HOST}:${INPUT_SOURCE_USERNAME}/${REPO_NAME}.git"
+    source_addr="git@${INPUT_SOURCE_HOST}:${INPUT_SOURCE_USERNAME}/${INPUT_SOURCE_REPO_NAME}.git"
     echo "${source_addr}"
     return
   fi
@@ -152,7 +152,7 @@ function gen_source_addr() {
     if [[ -n "${INPUT_SOURCE_PORT}" ]]; then
       source_addr="${source_addr}:${INPUT_SOURCE_PORT}"
     fi
-    source_addr="${source_addr}/${INPUT_SOURCE_USERNAME}/${REPO_NAME}.git"
+    source_addr="${source_addr}/${INPUT_SOURCE_USERNAME}/${INPUT_SOURCE_REPO_NAME}.git"
     echo "${source_addr}"
     return
   fi
@@ -162,7 +162,7 @@ function gen_source_addr() {
 
 function gen_dest_addr() {
   if [[ "${INPUT_DEST_PROTOCOL}" = "${PROTOCOL_SSH}" ]]; then
-    dest_addr="git@${INPUT_DEST_HOST}:${INPUT_DEST_USERNAME}/${REPO_NAME}.git"
+    dest_addr="git@${INPUT_DEST_HOST}:${INPUT_DEST_USERNAME}/${INPUT_DEST_REPO_NAME}.git"
     echo "${dest_addr}"
     return
   fi
@@ -171,7 +171,7 @@ function gen_dest_addr() {
     if [[ -n "${INPUT_DEST_PORT}" ]]; then
       dest_addr="${dest_addr}:${INPUT_DEST_PORT}"
     fi
-    dest_addr="${dest_addr}/${INPUT_DEST_USERNAME}/${REPO_NAME}.git"
+    dest_addr="${dest_addr}/${INPUT_DEST_USERNAME}/${INPUT_DEST_REPO_NAME}.git"
     echo "${dest_addr}"
     return
   fi
@@ -181,76 +181,71 @@ function gen_dest_addr() {
 
 function mirror() {
   IFS=","
-  for repo_name in ${INPUT_MIRROR_REPOS}; do
-    # shellcheck disable=SC2076
-    if [[ "${INPUT_IGNORED_REPOS}" =~ ",${repo_name}," ]]; then
-      continue
-    fi
-    export REPO_NAME="${repo_name}"
 
-    cd ${WORKDIR} || return 1
+  # shellcheck disable=SC2076
 
-    if ! source_addr=$(gen_source_addr); then
-      exit 1
-    fi
-    echo "source_addr: ${source_addr}"
+  cd ${WORKDIR} || return 1
 
-    # Clone 
-    if [[ "${INPUT_PUSH_BRANCH_ONLY}" = "true" ]]; then
-      if ! git clone -b "${INPUT_PUSH_BRANCH_NAME}" --single-branch --bare "${source_addr}" "${REPO_NAME}"; then
-        notify "Failed to clone repo: ${source_addr}"
-        if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
-          continue
-        fi
-        return 1
-      fi
-    else
-      if ! git clone --bare "${source_addr}" "${REPO_NAME}"; then
-        notify "Failed to clone repo: ${source_addr}"
-        if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
-          continue
-        fi
-        return 1
-      fi
-    fi    
+  if ! source_addr=$(gen_source_addr); then
+    exit 1
+  fi
+  echo "source_addr: ${source_addr}"
 
-    if [[ -n "${INPUT_DEST_CREATE_REPO_SCRIPT}" ]]; then
-      echo "Creating repo: ${REPO_NAME}"
-      if ! create_repo; then
-        notify "Failed to create repo: ${REPO_NAME}"
-        if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
-          continue
-        fi
-        return 1
-      fi
-    fi
-
-    if ! dest_addr=$(gen_dest_addr); then
-      exit 1
-    fi
-    echo "dest_addr: ${dest_addr}"
-
-    repo_dir="${WORKDIR}/${REPO_NAME}"
-    cd "${repo_dir}" || exit 1
-    if ! git push --all -f "${dest_addr}"; then
-      notify "Failed to push branches: ${dest_addr}"
+  # Clone 
+  if [[ "${INPUT_PUSH_BRANCH_ONLY}" = "true" ]]; then
+    if ! git clone -b "${INPUT_PUSH_BRANCH_NAME}" --single-branch --bare "${source_addr}" "${INPUT_SOURCE_REPO_NAME}"; then
+      notify "Failed to clone repo: ${source_addr}"
       if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
         continue
       fi
       return 1
     fi
-
-    # shellcheck disable=SC2076
-    if [[ "${INPUT_PUSH_TAGS}" = "true" && ! "${INPUT_SKIP_TAGS_REPOS}" =~ ",${REPO_NAME}," ]]; then
-      if ! git push --tags -f "${dest_addr}"; then
-        notify "Failed to push tags: ${dest_addr}"
-        if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
-          continue
-        fi
-        return 1
+  else
+    if ! git clone --bare "${source_addr}" "${INPUT_SOURCE_REPO_NAME}"; then
+      notify "Failed to clone repo: ${source_addr}"
+      if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
+        continue
       fi
+      return 1
     fi
-  done
+  fi    
+
+  if [[ -n "${INPUT_DEST_CREATE_REPO_SCRIPT}" ]]; then
+    echo "Creating repo: ${INPUT_DEST_REPO_NAME}"
+    if ! create_repo; then
+      notify "Failed to create repo: ${INPUT_DEST_REPO_NAME}"
+      if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
+        continue
+      fi
+      return 1
+    fi
+  fi
+
+  if ! dest_addr=$(gen_dest_addr); then
+    exit 1
+  fi
+  echo "dest_addr: ${dest_addr}"
+
+  repo_dir="${WORKDIR}/${INPUT_DEST_REPO_NAME}"
+  cd "${repo_dir}" || exit 1
+  if ! git push --all -f "${dest_addr}"; then
+    notify "Failed to push branches: ${dest_addr}"
+    if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
+      continue
+    fi
+    return 1
+  fi
+
+  # shellcheck disable=SC2076
+  if [[ "${INPUT_PUSH_TAGS}" = "true" && ! "${INPUT_SKIP_TAGS_REPOS}" =~ ",${INPUT_DEST_REPO_NAME}," ]]; then
+    if ! git push --tags -f "${dest_addr}"; then
+      notify "Failed to push tags: ${dest_addr}"
+      if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
+        continue
+      fi
+      return 1
+    fi
+  fi
 }
 
 function main() {
