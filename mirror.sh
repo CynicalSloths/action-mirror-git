@@ -226,7 +226,7 @@ function mirror() {
   fi
   echo "dest_addr: ${dest_addr}"
 
-  repo_dir="${WORKDIR}/${INPUT_DEST_REPO_NAME}"
+  repo_dir="${WORKDIR}/${INPUT_SOURCE_REPO_NAME}"
   cd "${repo_dir}" || exit 1
   if ! git push --all -f "${dest_addr}"; then
     notify "Failed to push branches: ${dest_addr}"
