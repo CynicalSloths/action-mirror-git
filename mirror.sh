@@ -1,5 +1,6 @@
 #!/bin/bash
 # Created by K8sCat <k8scat@gmail.com>
+# Modified by CynicalSloths <cynicalsloths@gmail.com>
 set +e
 
 PROTOCOL_SSH="ssh"
@@ -26,8 +27,10 @@ function init_env() {
   export INPUT_DEST_PROTOCOL="${INPUT_DEST_PROTOCOL:-https}"
   export INPUT_DEST_HOST="${INPUT_DEST_HOST:-github.com}"
   export INPUT_PUSH_TAGS="${INPUT_PUSH_TAGS:-true}"
+  export INPUT_PUSH_BRANCH_ONLY="${INPUT_PUSH_BRANCH_ONLY:-false}"
+  export INPUT_PUSH_BRANCH_NAME="${INPUT_PUSH_BRANCH_NAME:-main}"
   export INPUT_NOTIFY_PREFIX="${INPUT_NOTIFY_PREFIX:-Mirror Git}"
-  export INPUT_NOTIFY_SUFFIX="${INPUT_NOTIFY_SUFFIX:-Powered by https://github.com/k8scat/action-mirror-git}"
+  export INPUT_NOTIFY_SUFFIX="${INPUT_NOTIFY_SUFFIX:-Powered by https://github.com/CynicalSloths/action-mirror-git}"
   export INPUT_IGNORE_ERROR="${INPUT_IGNORE_ERROR:-false}"
 }
 
@@ -192,13 +195,24 @@ function mirror() {
     fi
     echo "source_addr: ${source_addr}"
 
-    if ! git clone --bare "${source_addr}" "${REPO_NAME}"; then
-      notify "Failed to clone repo: ${source_addr}"
-      if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
-        continue
+    # Clone 
+    if [[ "${INPUT_PUSH_BRANCH_ONLY}" = "true" ]]; then
+      if ! git clone -b "${INPUT_PUSH_BRANCH_NAME}" --single-branch --bare "${source_addr}" "${REPO_NAME}"; then
+        notify "Failed to clone repo: ${source_addr}"
+        if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
+          continue
+        fi
+        return 1
       fi
-      return 1
-    fi
+    else
+      if ! git clone --bare "${source_addr}" "${REPO_NAME}"; then
+        notify "Failed to clone repo: ${source_addr}"
+        if [[ "${INPUT_IGNORE_ERROR}" = "true" ]]; then
+          continue
+        fi
+        return 1
+      fi
+    fi    
 
     if [[ -n "${INPUT_DEST_CREATE_REPO_SCRIPT}" ]]; then
       echo "Creating repo: ${REPO_NAME}"

@@ -1,3 +1,4 @@
+This is a fork created by CynicalSloths to support branch based filtering, all original credit goes to K8scat (https://github.com/k8scat)
 # action-mirror-git
 
 Synchronize git repositories like a mirror.
